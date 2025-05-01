@@ -1,4 +1,4 @@
-import React, { Component } from 'react';  // Add this import
+import React, { Component } from 'react';
 import 'semantic-ui-css/semantic.min.css';
 
 class TimersDashboard extends Component {
@@ -6,27 +6,27 @@ class TimersDashboard extends Component {
     timers: [
       {
         id: 1,
-        title: 'Learn React',
-        project: 'Web Domination',
-        elapsed: '0',
+        title: '100m Race',
+        project: 'Nationals',
+        elapsed: 0, 
         runningSince: null,
       },
       {
         id: 2,
-        title: 'Learn extreme ironing',
-        project: 'World Domination',
-        elapsed: '0',
+        title: 'Chief Chimi Haircut Time',
+        project: 'Changing the West End',
+        elapsed: 0,
         runningSince: null,
       },
     ],
   };
+
   pad = (numberString, size) => {
     let padded = numberString;
     while (padded.length < size) padded = `0${padded}`;
     return padded;
   };
 
-  // Helper function to format time
   millisecondsToHuman = (ms) => {
     const seconds = Math.floor((ms / 1000) % 60);
     const minutes = Math.floor((ms / 1000 / 60) % 60);
@@ -40,20 +40,14 @@ class TimersDashboard extends Component {
 
     return humanized;
   };
-  
-    pad(numberString, size) {
-      let padded = numberString;
-      while (padded.length < size) padded = `0${padded}`;
-      return padded;
+
+  renderElapsedString = (elapsed, runningSince) => {
+    let totalElapsed = elapsed;
+    if (runningSince) {
+      totalElapsed += Date.now() - runningSince;
     }
-  
-    renderElapsedString(elapsed, runningSince) {
-      let totalElapsed = elapsed;
-      if (runningSince) {
-        totalElapsed += Date.now() - runningSince;
-      }
-      return this.millisecondsToHuman(totalElapsed);
-    }
+    return this.millisecondsToHuman(totalElapsed);
+  };
 
   handleStartClick = (timerId) => {
     const now = Date.now();
@@ -88,7 +82,6 @@ class TimersDashboard extends Component {
       }),
     });
   };
-  
 
   render() {
     return (
@@ -98,6 +91,7 @@ class TimersDashboard extends Component {
             timers={this.state.timers}
             onStartClick={this.handleStartClick}
             onStopClick={this.handleStopClick}
+            renderElapsedString={this.renderElapsedString}
           />
           <ToggleableTimerForm isOpen={false} />
         </div>
@@ -117,8 +111,9 @@ class EditableTimerList extends Component {
         elapsed={timer.elapsed}
         runningSince={timer.runningSince}
         editFormOpen={false}
-        onStartClick={() => this.props.onStartClick(timer.id)}
-        onStopClick={() => this.props.onStopClick(timer.id)}
+        onStartClick={this.props.onStartClick}
+        onStopClick={this.props.onStopClick}
+        renderElapsedString={this.props.renderElapsedString}
       />
     ));
     return (
@@ -141,13 +136,15 @@ class EditableTimer extends Component {
     } else {
       return (
         <Timer
+          id={this.props.id}
           title={this.props.title}
           project={this.props.project}
           elapsed={this.props.elapsed}
           runningSince={this.props.runningSince}
           isRunning={!!this.props.runningSince}
-          onStartClick={this.props.onStartClick}
-          onStopClick={this.props.onStopClick}
+          onStartClick={() => this.props.onStartClick(this.props.id)}
+          onStopClick={() => this.props.onStopClick(this.props.id)}
+          renderElapsedString={this.props.renderElapsedString}
         />
       );
     }
@@ -185,16 +182,28 @@ class TimerForm extends Component {
 }
 
 class Timer extends Component {
+  componentDidMount() {
+    this.forceUpdateInterval = setInterval(() => this.forceUpdate(), 50);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.forceUpdateInterval);
+  }
+
   handleStartClick = () => {
-    this.props.onStartClick && this.props.onStartClick();
+    this.props.onStartClick(this.props.id);
   };
 
   handleStopClick = () => {
-    this.props.onStopClick && this.props.onStopClick();
+    this.props.onStopClick(this.props.id);
   };
 
   render() {
-    const elapsedString = this.props.elapsed;
+    const elapsedString = this.props.renderElapsedString(
+      this.props.elapsed,
+      this.props.runningSince
+    );
+    
     return (
       <div className='ui centered card'>
         <div className='content'>
